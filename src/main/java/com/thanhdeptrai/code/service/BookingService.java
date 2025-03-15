@@ -1,5 +1,7 @@
 package com.thanhdeptrai.code.service;
 
+import com.thanhdeptrai.code.exceptions.BookingNotFoundException;
+import com.thanhdeptrai.code.exceptions.SeatNotFoundException;
 import com.thanhdeptrai.code.model.Booking;
 import com.thanhdeptrai.code.model.BookingStatus;
 import com.thanhdeptrai.code.model.Seat;
@@ -8,7 +10,6 @@ import com.thanhdeptrai.code.repository.BookingRepository;
 import com.thanhdeptrai.code.repository.SeatRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,19 +25,17 @@ public class BookingService {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
-    //TODO handle exception
-    public Booking reserveSeat(Long seatId, String userId) throws Exception {
+    public Booking reserveSeat(Long seatId, String userId) {
         String lockKey = "seat:" + seatId;
         Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(30));
         Booking booking = new Booking();
         if (locked != null && locked) {
             try {
-                Seat reserveSeat = seatRepository.findById(seatId).orElseThrow(ChangeSetPersister.NotFoundException::new);
+                Seat reserveSeat = seatRepository.findById(seatId).orElseThrow(SeatNotFoundException::new);
 
                 if (reserveSeat.getStatus().equals(SeatStatus.AVAILABLE)) {
                     reserveSeat.setStatus(SeatStatus.RESERVED);
                     seatRepository.save(reserveSeat);
-
 
                     booking.setSeat(reserveSeat);
                     booking.setUserId(userId);
@@ -53,8 +52,8 @@ public class BookingService {
     }
 
     @Transactional
-    public void confirmBooking(UUID bookingId, String paymentId) throws Exception {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(Exception::new);
+    public void confirmBooking(UUID bookingId, String paymentId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(BookingNotFoundException::new);
 
         booking.setPaymentId(paymentId);
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -65,7 +64,7 @@ public class BookingService {
 
     @Transactional
     public void releaseSeat(UUID bookingId) throws Exception {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(Exception::new);
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(BookingNotFoundException::new);
         booking.getSeat().setStatus(SeatStatus.AVAILABLE);
         booking.setStatus(BookingStatus.EXPIRED);
         seatRepository.save(booking.getSeat());
@@ -74,6 +73,6 @@ public class BookingService {
 
 
     public Booking getBookingById(UUID id) throws Exception {
-        return bookingRepository.findById(id).orElseThrow(Exception::new);
+        return bookingRepository.findById(id).orElseThrow(BookingNotFoundException::new);
     }
 }
