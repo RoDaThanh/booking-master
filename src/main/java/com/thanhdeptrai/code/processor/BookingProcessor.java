@@ -1,7 +1,6 @@
 package com.thanhdeptrai.code.processor;
 
 import com.thanhdeptrai.code.dto.BookingRequest;
-import com.thanhdeptrai.code.exceptions.SeatNotFoundException;
 import com.thanhdeptrai.code.model.Booking;
 import com.thanhdeptrai.code.service.BookingService;
 import com.thanhdeptrai.code.service.PaymentService;

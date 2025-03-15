@@ -3,7 +3,6 @@ package com.thanhdeptrai.code.service;
 import com.thanhdeptrai.code.dto.EventRequest;
 import com.thanhdeptrai.code.model.Event;
 import com.thanhdeptrai.code.repository.EventRepository;
-import com.thanhdeptrai.code.repository.SeatRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
