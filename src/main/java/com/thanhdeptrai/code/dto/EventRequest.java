@@ -5,13 +5,15 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+@Builder
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingRequest implements Serializable {
+public class EventRequest implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long seatId;
-    private String userId;
+    private String name;
+    private double price;
+    private int totalSeats;
 }
