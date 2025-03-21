@@ -16,23 +16,26 @@ import java.util.UUID;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class BookingController {
-    private final RabbitTemplate rabbitTemplate;
+
+    // disable queue for now
+    //private final RabbitTemplate rabbitTemplate;
 
     private final BookingService bookingService;
 
     @PostMapping("/book")
-    public ResponseEntity<String> bookSeat(
+    public ResponseEntity<Booking> bookSeat(
             @RequestParam Long seatId,
             @RequestParam String userId) {
 
-        String idempotencyKey = UUID.randomUUID().toString();
-        rabbitTemplate.convertAndSend("bookingQueue", new BookingRequest(seatId, userId));
+//        String idempotencyKey = UUID.randomUUID().toString();
+//         disable queue for now
+//        rabbitTemplate.convertAndSend("bookingQueue", new BookingRequest(seatId, userId));
+        Booking res = bookingService.doBooking(seatId, userId);
 
-        return ResponseEntity.accepted().body(
-                Map.of("message", "Booking processing", "trackingId", idempotencyKey).toString());
+        return ResponseEntity.accepted().body(res);
     }
 
-    @GetMapping("/bookings/{id}")
+    @GetMapping("/booking/{id}")
     public ResponseEntity<BookingStatus> getStatus(@PathVariable UUID id) {
         try {
             Booking booking = bookingService.getBookingById(id);

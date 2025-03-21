@@ -11,7 +11,8 @@ import java.util.Collections;
 
 @Configuration
 public class RabbitConfig {
-    @Bean
+    // disable queue for now
+    //@Bean
     public Queue bookingQueue() {
         return new Queue("bookingQueue");
     }

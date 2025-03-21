@@ -17,8 +17,8 @@ public class BookingProcessor {
     private final PaymentService paymentService;
 
     private static final Logger logger = LoggerFactory.getLogger(BookingProcessor.class);
-
-    @RabbitListener(queues = "bookingQueue")
+    // disable queue for now
+    //@RabbitListener(queues = "bookingQueue")
     public void processBooking(BookingRequest bookingRequest) {
         try {
             Booking booking = bookingService.reserveSeat(bookingRequest.getSeatId(), bookingRequest.getUserId());

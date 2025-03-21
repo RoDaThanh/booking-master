@@ -1,9 +1,8 @@
 package com.thanhdeptrai.code.service;
 
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -11,7 +10,16 @@ public class PaymentService {
 
     public String processPayment(String userId, double amount) {
         //stimulate payment process
-//
-        return null;
+
+        return "success";
+    }
+
+    public String processPaymentSuccess(String userId, double amount, boolean isSuccess) {
+        //stimulate payment process
+        if (isSuccess) {
+            return processPayment(userId, amount);
+        } else {
+            return Strings.EMPTY;
+        }
     }
 }

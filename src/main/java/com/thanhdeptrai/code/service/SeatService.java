@@ -29,4 +29,9 @@ public class SeatService {
 
         seatRepo.saveAll(seats);
     }
+
+    public List<Seat> getSeatsByEventId(Long eventId) {
+        return seatRepo.findByEventId(eventId);
+    }
+
 }
