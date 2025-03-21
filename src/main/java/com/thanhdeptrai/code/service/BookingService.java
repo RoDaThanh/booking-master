@@ -1,6 +1,7 @@
 package com.thanhdeptrai.code.service;
 
 import com.thanhdeptrai.code.exceptions.BookingNotFoundException;
+import com.thanhdeptrai.code.exceptions.SeatNotAvailableException;
 import com.thanhdeptrai.code.exceptions.SeatNotFoundException;
 import com.thanhdeptrai.code.model.Booking;
 import com.thanhdeptrai.code.model.BookingStatus;
@@ -43,6 +44,9 @@ public class BookingService {
                     booking.setReservedAt(LocalDateTime.now());
                     booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
                     booking = bookingRepository.save(booking);
+                } else {
+                    throw new SeatNotAvailableException("Seat: " + reserveSeat.getSeatNumber()
+                            + " is " + reserveSeat.getStatus());
                 }
             } finally {
                 redisTemplate.delete(lockKey);
