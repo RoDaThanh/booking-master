@@ -20,4 +20,14 @@ public class EventController {
         return ResponseEntity.ok(event);
     }
 
+    // get seats of event by id
+    @GetMapping("/event/{id}/seats")
+    public ResponseEntity<?> getSeatsByEventId(@PathVariable Long id) {
+        // get seats by event id
+
+        return ResponseEntity.ok(eventService.getSeatsByEventId(id));
+    }
+
+
+
 }
