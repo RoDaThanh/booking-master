@@ -7,7 +7,6 @@ import com.thanhdeptrai.code.model.Booking;
 import com.thanhdeptrai.code.model.BookingStatus;
 import com.thanhdeptrai.code.model.Seat;
 import com.thanhdeptrai.code.model.SeatStatus;
-import com.thanhdeptrai.code.processor.BookingProcessor;
 import com.thanhdeptrai.code.repository.BookingRepository;
 import com.thanhdeptrai.code.repository.SeatRepository;
 import jakarta.transaction.Transactional;
@@ -46,7 +45,7 @@ public class BookingService {
 
                     booking.setSeat(reserveSeat);
                     booking.setUserId(userId);
-                    booking.setStatus(BookingStatus.RESERVED);
+                    booking.setStatus(BookingStatus.INCOMPLETE);
                     booking.setReservedAt(LocalDateTime.now());
                     booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
                     booking = bookingRepository.save(booking);
@@ -61,29 +60,39 @@ public class BookingService {
         return booking;
     }
 
+    @Transactional
     public Booking doBooking(Long seatId, String userId) {
-        Booking booking = null;
-        try {
-            booking = reserveSeat(seatId, userId);
+        String lockKey = "lockId:" + seatId;
+        // try to acquire Redis lock for 30 seconds
+        boolean isLocked = Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(lockKey, "isLocked", Duration.ofSeconds(30)));
 
-            // check booking is null or not
-            if (booking.getId() == null) {
-                return booking;
-            } else {
-                String paymentId = paymentService.processPaymentSuccess(userId,
-                        booking.getSeat().getEvent().getPrice(), true);
-                if (paymentId != null) {
-                    confirmBooking(booking.getId(), paymentId);
-                } else {
-                    releaseSeat(booking.getId());
-                }
-            }
-        } catch (RuntimeException e) {
-            logger.error(e.getMessage(), e);
-        } catch (Exception exception) {
-            logger.error("Server Error! Cannot booking now");
+        if (!isLocked) {
+            throw new SeatNotAvailableException("Seat: " + seatId + " is currently being booked by another user. [redis lock]");
         }
-        return booking;
+        try {
+            Seat reserveSeat = seatRepository.findById(seatId).orElseThrow(SeatNotFoundException::new);
+            if (SeatStatus.AVAILABLE != reserveSeat.getStatus()) {
+                throw new SeatNotAvailableException("Seat: " + seatId + " is currently being booked by another user.");
+            }
+            // update status and persist to db
+            reserveSeat.setStatus(SeatStatus.RESERVED);
+            seatRepository.save(reserveSeat);
+
+            // create booking record
+            return createBooking(reserveSeat, userId);
+        } finally {
+            redisTemplate.delete(lockKey);
+        }
+    }
+
+    private Booking createBooking(Seat reserveSeat, String userId) {
+        Booking booking = new Booking();
+        booking.setSeat(reserveSeat);
+        booking.setUserId(userId);
+        booking.setStatus(BookingStatus.INCOMPLETE);
+        booking.setReservedAt(LocalDateTime.now());
+        booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+        return bookingRepository.save(booking);
     }
 
     @Transactional

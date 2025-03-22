@@ -27,6 +27,4 @@ public class Seat {
 
     @ManyToOne
     private Event event;
-
-
 }
