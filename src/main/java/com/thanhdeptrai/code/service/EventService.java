@@ -16,12 +16,10 @@ import java.util.List;
 public class EventService {
 
     private final EventRepository eventRepo;
-
     private final SeatService seatService;
 
     @Transactional
     public Event createEvent(EventRequest eventRequest) {
-
         Event event = Event.builder()
         .name(eventRequest.getName())
         .date(LocalDateTime.now())

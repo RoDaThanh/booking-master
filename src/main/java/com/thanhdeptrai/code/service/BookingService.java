@@ -26,39 +26,6 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final BookingRepository bookingRepository;
     private final RedisTemplate<String, String> redisTemplate;
-    private final PaymentService paymentService;
-
-    private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
-
-    @Transactional
-    public Booking reserveSeat(Long seatId, String userId) {
-        String lockKey = "lockId:" + seatId + userId;
-        Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(30));
-        Booking booking = new Booking();
-        if (locked != null && locked) {
-            try {
-                Seat reserveSeat = seatRepository.findById(seatId).orElseThrow(SeatNotFoundException::new);
-
-                if (reserveSeat.getStatus().equals(SeatStatus.AVAILABLE)) {
-                    reserveSeat.setStatus(SeatStatus.RESERVED);
-                    seatRepository.save(reserveSeat);
-
-                    booking.setSeat(reserveSeat);
-                    booking.setUserId(userId);
-                    booking.setStatus(BookingStatus.INCOMPLETE);
-                    booking.setReservedAt(LocalDateTime.now());
-                    booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
-                    booking = bookingRepository.save(booking);
-                } else {
-                    throw new SeatNotAvailableException("Seat: " + reserveSeat.getSeatNumber()
-                            + " is " + reserveSeat.getStatus());
-                }
-            } finally {
-                redisTemplate.delete(lockKey);
-            }
-        }
-        return booking;
-    }
 
     @Transactional
     public Booking doBooking(Long seatId, String userId) {
@@ -95,28 +62,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    @Transactional
-    public void confirmBooking(UUID bookingId, String paymentId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(BookingNotFoundException::new);
-
-        booking.setPaymentId(paymentId);
-        booking.setStatus(BookingStatus.CONFIRMED);
-        booking.getSeat().setStatus(SeatStatus.BOOKED);
-        seatRepository.save(booking.getSeat());
-        bookingRepository.save(booking);
-    }
-
-    @Transactional
-    public void releaseSeat(UUID bookingId) throws Exception {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(BookingNotFoundException::new);
-        booking.getSeat().setStatus(SeatStatus.AVAILABLE);
-        booking.setStatus(BookingStatus.EXPIRED);
-        seatRepository.save(booking.getSeat());
-        bookingRepository.save(booking);
-    }
-
-
-    public Booking getBookingById(UUID id) throws Exception {
+    public Booking getBookingById(UUID id) {
         return bookingRepository.findById(id).orElseThrow(BookingNotFoundException::new);
     }
 }

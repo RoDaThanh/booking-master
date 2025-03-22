@@ -18,7 +18,7 @@ public class SeatService {
 
     public void createSeats(int totalSeats, Event event) {
         List<Seat> seats = new ArrayList<>();
-        for (int i = 0; i <= totalSeats; i++) {
+        for (int i = 0; i < totalSeats; i++) {
             String seatName = "A " + event.getName() + i;
             seats.add(Seat.builder()
                     .seatNumber(seatName)
