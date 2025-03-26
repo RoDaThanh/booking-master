@@ -25,6 +25,7 @@ public class Seat {
     @Version
     private Long version = 0L;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "event_id")
     private Event event;
 }
