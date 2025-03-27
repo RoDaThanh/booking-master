@@ -27,4 +27,6 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PENDING;
+
+    private String paymentIntentId;
 }

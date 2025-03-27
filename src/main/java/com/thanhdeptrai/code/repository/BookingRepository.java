@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -14,4 +15,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     // Custom query to find expired reservations
     @Query("SELECT b FROM Booking b WHERE b.expiresAt < :currentTime AND b.status = 'RESERVED'")
     List<Booking> findExpiredReservations(LocalDateTime currentTime);
+
+    Optional<Booking> findByPaymentIntentId(String paymentIntentId);
 }

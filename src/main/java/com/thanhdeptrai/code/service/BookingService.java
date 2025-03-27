@@ -1,5 +1,6 @@
 package com.thanhdeptrai.code.service;
 
+import com.stripe.model.PaymentIntent;
 import com.thanhdeptrai.code.exceptions.BookingNotFoundException;
 import com.thanhdeptrai.code.exceptions.SeatNotAvailableException;
 import com.thanhdeptrai.code.exceptions.SeatNotFoundException;
@@ -28,6 +29,7 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final BookingRepository bookingRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final PaymentService paymentService;
 
     //create a logger field
     private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
@@ -68,7 +70,12 @@ public class BookingService {
             });
 
             // create booking record
-            return createBooking(reserveSeat, userId);
+            Booking booking = createBooking(reserveSeat, userId);
+
+            // Create Stripe payment Intent
+            PaymentIntent paymentIntent = paymentService.createPaymentIntent(reserveSeat.getEvent().getPrice(), "usd");
+            booking.setPaymentId(paymentIntent.getId());
+            return bookingRepository.save(booking);
         } catch (Exception e) {
             logger.error("Exception occurred, releasing lock: {}", lockKey, e);
             releaseRedisLock(lockKey, lockValue);
@@ -94,10 +101,17 @@ public class BookingService {
         booking.setStatus(BookingStatus.INCOMPLETE);
         booking.setReservedAt(LocalDateTime.now());
         booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
-        return bookingRepository.save(booking);
+        return booking;
     }
 
     public Booking getBookingById(UUID id) {
         return bookingRepository.findById(id).orElseThrow(BookingNotFoundException::new);
+    }
+
+    public Booking getBookingByPaymentIntentId(String paymentIntentId) {
+        return bookingRepository.findByPaymentIntentId(paymentIntentId).orElseThrow(BookingNotFoundException::new);
+    }
+    public Booking saveBooking(Booking booking) {
+        return bookingRepository.save(booking);
     }
 }
