@@ -1,25 +1,46 @@
 package com.thanhdeptrai.code.service;
 
-import org.apache.logging.log4j.util.Strings;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentConfirmParams;
+import com.stripe.param.PaymentIntentCreateParams;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentService {
-    private final WebClient webClient =  WebClient.create("https://api.payment.mock");
+    @Value("${stripe.secret-key}")
+    private String stripeSecretKey;
 
-    public String processPayment(String userId, double amount) {
-        //stimulate payment process
-
-        return "success";
+    public PaymentIntent confirmPayment(String paymentIntentId) throws StripeException {
+        PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+        PaymentIntentConfirmParams params =
+                PaymentIntentConfirmParams.builder()
+                        .setPaymentMethod("pm_card_visa")
+                        .setReturnUrl("https://www.example.com")
+                        .build();
+        return paymentIntent.confirm(params);
     }
 
-    public String processPaymentSuccess(String userId, double amount, boolean isSuccess) {
-        //stimulate payment process
-        if (isSuccess) {
-            return processPayment(userId, amount);
-        } else {
-            return Strings.EMPTY;
+    public PaymentIntent createPaymentIntent(double price, String usd) {
+        try {
+            Stripe.apiKey = stripeSecretKey;
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount(2000L)
+                    .setCurrency("usd")
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .build()
+                    )
+                    .build();
+            return PaymentIntent.create(params);
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
         }
     }
+
 }
