@@ -16,5 +16,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT b FROM Booking b WHERE b.expiresAt < :currentTime AND b.status = 'RESERVED'")
     List<Booking> findExpiredReservations(LocalDateTime currentTime);
 
+    @Query("SELECT b FROM Booking b WHERE b.paymentIntentId = :paymentIntentId")
     Optional<Booking> findByPaymentIntentId(String paymentIntentId);
 }

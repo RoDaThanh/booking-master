@@ -1,6 +1,7 @@
 package com.thanhdeptrai.code.controller;
 
 import com.stripe.exception.StripeException;
+import com.thanhdeptrai.code.service.BookingService;
 import com.thanhdeptrai.code.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class PaymentController {
 
-    private final PaymentService paymentService;
+    private final BookingService bookingService;
 
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmPayment(@RequestParam String paymentIntentId) {
         try {
-            String paymentMessage = paymentService.confirmPayment(paymentIntentId);
+            String paymentMessage = bookingService.confirmBooking(paymentIntentId);
             if ("Payment confirmed".equals(paymentMessage)) {
                 return ResponseEntity.ok(paymentMessage);
             } else {

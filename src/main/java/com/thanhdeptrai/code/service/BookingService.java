@@ -1,5 +1,6 @@
 package com.thanhdeptrai.code.service;
 
+import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.thanhdeptrai.code.exceptions.BookingNotFoundException;
 import com.thanhdeptrai.code.exceptions.SeatNotAvailableException;
@@ -74,7 +75,7 @@ public class BookingService {
 
             // Create Stripe payment Intent
             PaymentIntent paymentIntent = paymentService.createPaymentIntent(reserveSeat.getEvent().getPrice(), "usd");
-            booking.setPaymentId(paymentIntent.getId());
+            booking.setPaymentIntentId(paymentIntent.getId());
             return bookingRepository.save(booking);
         } catch (Exception e) {
             logger.error("Exception occurred, releasing lock: {}", lockKey, e);
@@ -111,7 +112,22 @@ public class BookingService {
     public Booking getBookingByPaymentIntentId(String paymentIntentId) {
         return bookingRepository.findByPaymentIntentId(paymentIntentId).orElseThrow(BookingNotFoundException::new);
     }
+
+    @Transactional
     public Booking saveBooking(Booking booking) {
         return bookingRepository.save(booking);
+    }
+
+    public String confirmBooking(String paymentIntentId) throws StripeException {
+        Booking booking = getBookingByPaymentIntentId(paymentIntentId);
+        PaymentIntent paymentIntent = paymentService.confirmPayment(paymentIntentId);
+        if ("succeeded".equals(paymentIntent.getStatus())) {
+            booking.setStatus(BookingStatus.CONFIRMED);
+            booking.getSeat().setStatus(SeatStatus.BOOKED);
+            saveBooking(booking);
+            return "Payment confirmed";
+        } else {
+            return "Payment failed";
+        }
     }
 }

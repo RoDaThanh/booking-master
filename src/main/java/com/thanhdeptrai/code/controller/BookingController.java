@@ -30,4 +30,11 @@ public class BookingController {
         return ResponseEntity.ok(booking.getStatus());
 
     }
+
+    @GetMapping("/booking")
+    public ResponseEntity<Booking> getByPaymentID(@RequestParam String id) {
+        Booking booking = bookingService.getBookingByPaymentIntentId(id);
+        return ResponseEntity.ok(booking);
+
+    }
 }
